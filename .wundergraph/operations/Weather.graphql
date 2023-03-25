@@ -1,0 +1,31 @@
+query (
+    $continent: String!
+    # the @internal directive removes the $capital variable from the public API
+    # this means, the user can't set it manually
+    # this variable is our JOIN key
+    $capital: String! @internal
+) {
+    countries: countries_countries(filter: { continent: { eq: $continent } }) {
+        code
+        name
+        # using the @export directive, we can export the value of the field `capital` into the JOIN key ($capital)
+        capital @export(as: "capital")
+        # the _join field returns the type Query!
+        # it exists on every object type so you can everywhere in your Query documents
+        # with the @transform directive, we can transform the response
+        weather: _join @transform(get: "weather_getCityByName.weather") {
+            # once we're inside the _join field, we can use the $capital variable to join the weather API
+            weather_getCityByName(name: $capital) {
+                weather {
+                    temperature {
+                        max
+                    }
+                    summary {
+                        title
+                        description
+                    }
+                }
+            }
+        }
+    }
+}
